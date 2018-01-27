@@ -14,8 +14,8 @@ Currently only Windows is supported
 
 # Building
 
-The project relies on [CMake](https://cmake.org/). You can use [vcpkg]() or
-[build Corrade yourself](http://doc.magnum.graphics/corrade/building-corrade.html).
+The project relies on [CMake](https://cmake.org/). You can use [vcpkg](https://github.com/Microsoft/vcpkg#quick-start)
+or [build Corrade yourself](http://doc.magnum.graphics/corrade/building-corrade.html).
 After that, building this project should be a matter of:
 
 ~~~
