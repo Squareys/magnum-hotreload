@@ -119,7 +119,7 @@ void onFileChanged(const std::string& filename) {
 
         /* Tell module that it is being unloaded and retrieve its state for
          * state transfer, if supported. */
-        void* state = module->unload(false);
+        auto state{module->unload(false)};
         /* Remove references to the plugin, otherwise we cannot unload it */
         module.reset(nullptr);
 
@@ -144,7 +144,7 @@ void onFileChanged(const std::string& filename) {
         module = manager.instance("TestModule123");
         /* Tell the new instance it has been loaded and pass the state from the
          * old plugin, which may be used or may not. */
-        module->load(state);
+        module->load(std::move(state));
     }
 }
 

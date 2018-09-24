@@ -23,6 +23,7 @@
 #include "AbstractModule.h"
 
 #include <Corrade/Utility/Debug.h>
+#include <memory>
 
 using namespace Corrade::Utility;
 
@@ -39,26 +40,31 @@ class TestModule: public AbstractModule {
         TestModule(Corrade::PluginManager::AbstractManager& manager, const std::string& plugin):
             AbstractModule{manager, plugin} {}
 
-        virtual void load(void* previousState) override {
+        virtual void load(Corrade::Containers::Array<void>&& previousState) override {
             Debug{} << "TestModule::load()";
 
-            if(!previousState) {
-                _state = new TestModuleState;
+            if(previousState.empty()) {
+                Debug{} << "Initializing state";
+                _state.reset(new TestModuleState);
             } else {
-                _state = static_cast<TestModuleState*>(previousState);
+                _state.reset(static_cast<TestModuleState*>(previousState.release()));
                 _state->hotReloadCounter++;
 
                 Debug() << "I have been hot reloaded" << _state->hotReloadCounter << "times.";
             }
         }
 
-        virtual void* unload(bool shutdown) override {
+        virtual Corrade::Containers::Array<void>&& unload(bool shutdown) override {
             Debug{} << "TestModule::unload(" << shutdown << ")";
-            return _state;
+
+            TestModuleState* state = _state.release();
+            Debug() << "Sizeof state:" << sizeof(TestModuleState);
+            return std::move(Corrade::Containers::Array<void>{
+                    static_cast<void*>(state), sizeof(TestModuleState)});
         }
 
     private:
-        TestModuleState* _state;
+        std::unique_ptr<TestModuleState> _state;
 };
 
 CORRADE_PLUGIN_REGISTER(TestModule, TestModule, MODULE_PLUGIN_ID);

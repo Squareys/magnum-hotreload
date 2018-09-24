@@ -25,6 +25,7 @@
 
 #include <Corrade/PluginManager/Manager.h>
 #include <Corrade/PluginManager/AbstractPlugin.h>
+#include <Corrade/Containers/Array.h>
 
 #define MODULE_PLUGIN_ID "de.squareys.HotReloadExample.AbstractModule/1.0"
 
@@ -35,13 +36,24 @@ class AbstractModule: public Corrade::PluginManager::AbstractPlugin {
     CORRADE_PLUGIN_INTERFACE(MODULE_PLUGIN_ID)
 
     public:
-        AbstractModule(Corrade::PluginManager::AbstractManager& manager, const std::string& plugin): AbstractPlugin{manager, plugin} {}
+        AbstractModule(Corrade::PluginManager::AbstractManager& manager, const std::string& plugin):
+            AbstractPlugin{manager, plugin} {}
 
         /**
          * @brief Method called to load this module.
-         * @param previousState Potential previous state of this plugin, if hot reloaded, may be `nullptr`.
+         * @param previousState Potential previous state of this plugin, if hot
+         *                      reloaded, may be empty if first load or
+         *                      implementation of `unload()` returned an empty
+         *                      array.
+         *
+         * Use `previousState` with release to prevent data from being destroyed:
+         *
+         * @code
+         *   _myState = static_cast<MyState*>(previousState.release());
+         * @endcode
          */
-        virtual void load(void* previousState=nullptr) = 0;
+        virtual void load(Corrade::Containers::Array<void>&& previousState) = 0;
+        virtual void load() { load(std::move(Corrade::Containers::Array<void>{nullptr})); }
 
         /**
          * @brief Method called when this module is unloaded.
@@ -49,10 +61,15 @@ class AbstractModule: public Corrade::PluginManager::AbstractPlugin {
          *                 state should be retained. `false` in case of hot
          *                 reload.
          * @returns State of the plugin to pass onto a hot reloaded version of
-         *          itself or `nullptr`, if no state or state retention is not
-         *          supported by this module.
+         *          itself or an empty array, if no state exists or state
+         *          retention is not supported by this module.
+         *
+         * Warning: While it is possible to pass on a deleter with the Array,
+         * this deleter will get unloaded with the module, if it isn't kept
+         * around. Whether that works or not will therefore depend on how you
+         * handle unloading.
          */
-        virtual void* unload(bool shutdown=true) = 0;
+        virtual Corrade::Containers::Array<void>&& unload(bool shutdown=true) = 0;
 };
 
 #endif
